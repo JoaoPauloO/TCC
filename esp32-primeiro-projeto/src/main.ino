@@ -21,8 +21,15 @@
 #define SSID "YOUR_WIFI_SSID"
 #define PASS "YOUR_WIFI_PASS"
 
-#define Led1Pin 0 //"Aberto"
-#define Led2Pin 0 //"Fechado"
+#define Led1Pin 0 //  "Aberto"
+#define Led2Pin 0 //  "Fechado"
+
+#define SmokePin 1 //  "Chuva"
+#define RainPin 1  //  "Gás"
+
+bool command;
+
+enum WindowMode = [ "Aberto", "Fechado" ];
 
 #define BAUD_RATE 9600
 
@@ -109,6 +116,9 @@ void setup()
   pinMode(Led1Pin, OUTPUT);
   pinMode(Led2Pin, OUTPUT);
 
+  pinMode(RainPin, INPUT); // Min value = 1023 / MaxValue = 0
+  pinMode(SmokePin, INPUT);
+
   digitalWrite(Led1Pin, HIGH);
 
   setupWiFi();
@@ -121,5 +131,45 @@ void setup()
 
 void loop()
 {
+  int rainValue = digitalRead(RainPin);
+  int smokeValue = digitalRead(SmokePin);
   SinricPro.handle();
+
+  if (rainValue < 700) //  is raining
+  {
+    command = false;
+  }
+
+  if (smokeValue < 700) //  is smokey
+  {
+    command = true;
+  }
+
+  if (command && !isWindowOpen())
+  {
+    openWindow();
+  }
+  else if (command && isWindowOpen())
+  {
+    closeWindow();
+  }
+}
+
+bool isWindowOpen()
+{
+  return globalModes["windowState"].charAt(0) == 'A';
+}
+
+void openWindow()
+{
+  digitalWrite(Led1Pin, HIGH);
+  digitalWrite(Led2Pin, LOW);
+  updateMode("windowState", "Aberto");
+}
+
+void closeWindow()
+{
+  digitalWrite(Led2Pin, HIGH);
+  digitalWrite(Led1Pin, LOW);
+  updateMode("windowState", "Fechado");
 }
