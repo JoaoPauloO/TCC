@@ -10,7 +10,6 @@
 // ESP32 Wifi
 #include <WiFi.h>
 #include <Arduino.h>
-
 #include <SinricPro.h>
 #include "SmartWindow.h"
 
@@ -18,18 +17,18 @@
 #define APP_SECRET "02f82d71-fe22-4839-92e4-65adec11fc29-5873019c-f4c9-47ad-8c49-a56ef52f4f22"
 #define DEVICE_ID "613df2b62c014831f824a6dc"
 
-#define SSID "YOUR_WIFI_SSID"
-#define PASS "YOUR_WIFI_PASS"
+#define SSID "Valmira"
+#define PASS "@val515856"
 
-#define Led1Pin 0 //  "Aberto"
-#define Led2Pin 0 //  "Fechado"
+#define Led1Pin 19 //  "Aberto"
+#define Led2Pin 18 //  "Fechado"
 
-#define SmokePin 1 //  "Chuva"
-#define RainPin 1  //  "Gás"
+#define SmokePin 12 //  "Chuva"
+#define RainPin 34  //  "Gás"
 
-bool command;
+bool command = true;
 
-enum WindowMode = [ "Aberto", "Fechado" ];
+//enum WindowMode = [ "Aberto", "Fechado" ];
 
 #define BAUD_RATE 9600
 
@@ -120,7 +119,6 @@ void setup()
   pinMode(SmokePin, INPUT);
 
   digitalWrite(Led1Pin, HIGH);
-
   setupWiFi();
   setupSinricPro();
 }
@@ -131,45 +129,56 @@ void setup()
 
 void loop()
 {
-  int rainValue = digitalRead(RainPin);
-  int smokeValue = digitalRead(SmokePin);
+  int rainValue = analogRead(RainPin);
+  int smokeValue = analogRead(SmokePin);
   SinricPro.handle();
 
-  if (rainValue < 700) //  is raining
+  //Serial.println(rainValue);
+  //Serial.println(globalModes["windowState"]);
+   
+  if (rainValue < 3000) //  is raining
   {
-    command = false;
+    Serial.println(rainValue);
+    
+    if(isWindowOpen())
+        closeWindow();
+    //command = false;
   }
 
+  /*
   if (smokeValue < 700) //  is smokey
   {
     command = true;
-  }
-
+  }*/
+ 
+  /*
   if (command && !isWindowOpen())
   {
     openWindow();
   }
-  else if (command && isWindowOpen())
+  else if (!command && isWindowOpen())
   {
     closeWindow();
-  }
+  }*/
 }
 
 bool isWindowOpen()
 {
-  return globalModes["windowState"].charAt(0) == 'A';
+    if(globalModes.at("windowState") == null) return true;
+    
+     return globalModes.at("windowState") == "Aberto" ;
 }
 
 void openWindow()
 {
   digitalWrite(Led1Pin, HIGH);
   digitalWrite(Led2Pin, LOW);
-  updateMode("windowState", "Aberto");
+ // updateMode("windowState", "Aberto");
 }
 
 void closeWindow()
 {
   digitalWrite(Led2Pin, HIGH);
   digitalWrite(Led1Pin, LOW);
-  updateMode("windowState", "Fechado");
+  //updateMode("windowState", "Fechado");
 }
