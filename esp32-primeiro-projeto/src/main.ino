@@ -23,12 +23,10 @@
 #define Led1Pin 19 //  "Aberto"
 #define Led2Pin 18 //  "Fechado"
 
-#define SmokePin 12 //  "Chuva"
-#define RainPin 34  //  "Gás"
+#define SmokePin 12 //  "Gás"
+#define RainPin 34  //  "Chuva"
 
 bool command = true;
-
-//enum WindowMode = [ "Aberto", "Fechado" ];
 
 #define BAUD_RATE 9600
 
@@ -115,7 +113,7 @@ void setup()
   pinMode(Led1Pin, OUTPUT);
   pinMode(Led2Pin, OUTPUT);
 
-  pinMode(RainPin, INPUT); // Min value = 1023 / MaxValue = 0
+  pinMode(RainPin, INPUT); // Min value = 4096 / MaxValue = 0
   pinMode(SmokePin, INPUT);
 
   digitalWrite(Led1Pin, HIGH);
@@ -135,13 +133,13 @@ void loop()
 
   //Serial.println(rainValue);
   //Serial.println(globalModes["windowState"]);
-   
+
   if (rainValue < 3000) //  is raining
   {
     Serial.println(rainValue);
-    
-    if(isWindowOpen())
-        closeWindow();
+
+    if (isWindowOpen())
+      closeWindow();
     //command = false;
   }
 
@@ -150,7 +148,7 @@ void loop()
   {
     command = true;
   }*/
- 
+
   /*
   if (command && !isWindowOpen())
   {
@@ -164,16 +162,17 @@ void loop()
 
 bool isWindowOpen()
 {
-    if(globalModes.at("windowState") == null) return true;
-    
-     return globalModes.at("windowState") == "Aberto" ;
+  if (globalModes.at("windowState") == NULL)
+    return true;
+
+  return globalModes.at("windowState") == "Aberto";
 }
 
 void openWindow()
 {
   digitalWrite(Led1Pin, HIGH);
   digitalWrite(Led2Pin, LOW);
- // updateMode("windowState", "Aberto");
+  // updateMode("windowState", "Aberto");
 }
 
 void closeWindow()
