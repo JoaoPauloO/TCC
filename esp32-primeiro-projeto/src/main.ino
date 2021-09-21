@@ -23,11 +23,11 @@
 #define Led1Pin 19 //  "Aberto"
 #define Led2Pin 18 //  "Fechado"
 
-#define SmokePin 12 //  "Gás"
-#define RainPin 34  //  "Chuva"
+#define SmokePin 34 //  "Gás"
+#define RainPin 32  //  "Chuva"
 
 bool command = true;
-
+String state = "";
 #define BAUD_RATE 9600
 
 SmartWindow &smartWindow = SinricPro[DEVICE_ID];
@@ -55,11 +55,13 @@ bool onSetMode(const String &deviceId, const String &instance, String &mode)
   {
     digitalWrite(Led1Pin, HIGH);
     digitalWrite(Led2Pin, LOW);
+    state = "Aberto";
   }
   else if (mode.charAt(0) == 'F')
   {
     digitalWrite(Led2Pin, HIGH);
     digitalWrite(Led1Pin, LOW);
+    state = "Fechado";
   }
 
   return true;
@@ -89,10 +91,12 @@ void setupSinricPro()
   smartWindow.onSetMode("windowState", onSetMode);
 
   SinricPro.onConnected([]
-                        { Serial.printf("[SinricPro]: Connected\r\n"); });
+                        {  Serial.printf("[SinricPro]: Connected\r\n");  
+                          updateMode("windowState", "Aberto"); });
   SinricPro.onDisconnected([]
                            { Serial.printf("[SinricPro]: Disconnected\r\n"); });
   SinricPro.begin(APP_KEY, APP_SECRET);
+  
 };
 
 void setupWiFi()
@@ -117,6 +121,7 @@ void setup()
   pinMode(SmokePin, INPUT);
 
   digitalWrite(Led1Pin, HIGH);
+  state = "Aberto";
   setupWiFi();
   setupSinricPro();
 }
@@ -129,55 +134,40 @@ void loop()
 {
   int rainValue = analogRead(RainPin);
   int smokeValue = analogRead(SmokePin);
-  SinricPro.handle();
 
-  //Serial.println(rainValue);
   //Serial.println(globalModes["windowState"]);
 
-  if (rainValue < 3000) //  is raining
+    
+  if (rainValue < 3000  && isWindowOpen()) //  is raining
   {
     Serial.println(rainValue);
-
-    if (isWindowOpen())
-      closeWindow();
-    //command = false;
-  }
-
-  /*
-  if (smokeValue < 700) //  is smokey
-  {
-    command = true;
-  }*/
-
-  /*
-  if (command && !isWindowOpen())
-  {
-    openWindow();
-  }
-  else if (!command && isWindowOpen())
-  {
+    Serial.println("Fechando a Janela");
     closeWindow();
-  }*/
+    //command = false;
+    delay(5000);
+  }
+
+    SinricPro.handle();
+
 }
 
 bool isWindowOpen()
 {
-  if (globalModes.at("windowState") == NULL)
-    return true;
-
-  return globalModes.at("windowState") == "Aberto";
+   return state == "Aberto";
 }
 
 void openWindow()
 {
   digitalWrite(Led1Pin, HIGH);
   digitalWrite(Led2Pin, LOW);
-  // updateMode("windowState", "Aberto");
+  state = "Aberto";
+  updateMode("windowState", "Aberto");
 }
 
 void closeWindow()
 {
   digitalWrite(Led2Pin, HIGH);
   digitalWrite(Led1Pin, LOW);
-  //updateMode("windowState", "Fechado");
+  state = "Fechado";
+  updateMode("windowState", "Fechado");
 }
