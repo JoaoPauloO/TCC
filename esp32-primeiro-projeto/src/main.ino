@@ -27,7 +27,8 @@
 #define RainPin 32  //  "Chuva"
 
 bool command = true;
-String state = "";
+bool isConnectedToSinric = false;
+String state;
 #define BAUD_RATE 9600
 
 SmartWindow &smartWindow = SinricPro[DEVICE_ID];
@@ -91,12 +92,16 @@ void setupSinricPro()
   smartWindow.onSetMode("windowState", onSetMode);
 
   SinricPro.onConnected([]
-                        {  Serial.printf("[SinricPro]: Connected\r\n");  
-                          updateMode("windowState", "Aberto"); });
+                        {
+                          Serial.printf("[SinricPro]: Connected\r\n");
+                          isConnectedToSinric = true;
+                        });
   SinricPro.onDisconnected([]
-                           { Serial.printf("[SinricPro]: Disconnected\r\n"); });
+                           {
+                             Serial.printf("[SinricPro]: Disconnected\r\n");
+                             isConnectedToSinric = false;
+                           });
   SinricPro.begin(APP_KEY, APP_SECRET);
-  
 };
 
 void setupWiFi()
@@ -120,8 +125,10 @@ void setup()
   pinMode(RainPin, INPUT); // Min value = 4096 / MaxValue = 0
   pinMode(SmokePin, INPUT);
 
+  //Abrindo window
   digitalWrite(Led1Pin, HIGH);
   state = "Aberto";
+
   setupWiFi();
   setupSinricPro();
 }
@@ -132,42 +139,56 @@ void setup()
 
 void loop()
 {
-  int rainValue = analogRead(RainPin);
-  int smokeValue = analogRead(SmokePin);
-
-  //Serial.println(globalModes["windowState"]);
-
-    
-  if (rainValue < 3000  && isWindowOpen()) //  is raining
+  SinricPro.handle();
+  if (isConnectedToSinric)
   {
-    Serial.println(rainValue);
-    Serial.println("Fechando a Janela");
-    closeWindow();
-    //command = false;
-    delay(5000);
+
+    int rainValue = analogRead(RainPin);
+    int smokeValue = analogRead(SmokePin);
+
+    if (rainValue < 3000) //  is raining
+    {
+      command = false;
+    }
+
+    if (smokeValue < 3000) // is smokey
+    {
+      command = true;
+    }
+
+    windowHandle();
   }
-
-    SinricPro.handle();
-
 }
 
 bool isWindowOpen()
 {
-   return state == "Aberto";
+  return state == "Aberto";
+}
+
+void windowHandle()
+{
+  if (command && isWindowOpen())
+    openWindow();
+  if (!command && !isWindowOpen())
+    closeWindow();
 }
 
 void openWindow()
 {
+  Serial.printf("Abrindo janela");
   digitalWrite(Led1Pin, HIGH);
   digitalWrite(Led2Pin, LOW);
   state = "Aberto";
+
   updateMode("windowState", "Aberto");
 }
 
 void closeWindow()
 {
+  Serial.printf("Fechando janela");
   digitalWrite(Led2Pin, HIGH);
   digitalWrite(Led1Pin, LOW);
   state = "Fechado";
+
   updateMode("windowState", "Fechado");
 }
