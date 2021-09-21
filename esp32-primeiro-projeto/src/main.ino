@@ -24,9 +24,9 @@
 #define Led2Pin 18 //  "Fechado"
 
 #define SmokePin 34 //  "Gás"
-#define RainPin 32  //  "Chuva"
+#define RainPin 33  //  "Chuva"
 
-bool command = true;
+char command = 'P';
 bool isConnectedToSinric = false;
 String state;
 #define BAUD_RATE 9600
@@ -95,6 +95,7 @@ void setupSinricPro()
                         {
                           Serial.printf("[SinricPro]: Connected\r\n");
                           isConnectedToSinric = true;
+                          openWindow();
                         });
   SinricPro.onDisconnected([]
                            {
@@ -125,10 +126,6 @@ void setup()
   pinMode(RainPin, INPUT); // Min value = 4096 / MaxValue = 0
   pinMode(SmokePin, INPUT);
 
-  //Abrindo window
-  digitalWrite(Led1Pin, HIGH);
-  state = "Aberto";
-
   setupWiFi();
   setupSinricPro();
 }
@@ -142,18 +139,20 @@ void loop()
   SinricPro.handle();
   if (isConnectedToSinric)
   {
-
+    command = 'P';
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
 
-    if (rainValue < 3000) //  is raining
+    if (rainValue < 2000) //  is raining
     {
-      command = false;
+      Serial.println(rainValue);
+
+      command = 'F';
     }
 
     if (smokeValue < 3000) // is smokey
     {
-      command = true;
+      command = 'A';
     }
 
     windowHandle();
@@ -167,9 +166,9 @@ bool isWindowOpen()
 
 void windowHandle()
 {
-  if (command && isWindowOpen())
+  if (command == 'A' && !isWindowOpen())
     openWindow();
-  if (!command && !isWindowOpen())
+  if (command == 'F' && isWindowOpen())
     closeWindow();
 }
 
