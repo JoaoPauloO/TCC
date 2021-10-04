@@ -23,8 +23,11 @@
 #define Led1Pin 19 //  "Aberto"
 #define Led2Pin 18 //  "Fechado"
 
-#define SmokePin 34 //  "Gás"
+#define SmokePin 32 //  "Gás"
 #define RainPin 33  //  "Chuva"
+
+#define motorA 27 // Pinos que irão controlar o estado do motor
+#define motorB 26
 
 char command = 'P';
 bool isConnectedToSinric = false;
@@ -56,12 +59,24 @@ bool onSetMode(const String &deviceId, const String &instance, String &mode)
   {
     digitalWrite(Led1Pin, HIGH);
     digitalWrite(Led2Pin, LOW);
+    digitalWrite(motorA,HIGH);
+    digitalWrite(motorB,LOW);
+    delay(5000);
+    digitalWrite(motorA,LOW);
+    digitalWrite(motorB,LOW);
+    
     state = "Aberto";
   }
   else if (mode.charAt(0) == 'F')
   {
     digitalWrite(Led2Pin, HIGH);
     digitalWrite(Led1Pin, LOW);
+    digitalWrite(motorA,LOW);
+    digitalWrite(motorB,HIGH);
+    delay(5000);
+    digitalWrite(motorA,LOW);
+    digitalWrite(motorB,LOW);
+    
     state = "Fechado";
   }
 
@@ -95,7 +110,7 @@ void setupSinricPro()
                         {
                           Serial.printf("[SinricPro]: Connected\r\n");
                           isConnectedToSinric = true;
-                          openWindow();
+                          //openWindow();
                         });
   SinricPro.onDisconnected([]
                            {
@@ -126,6 +141,12 @@ void setup()
   pinMode(RainPin, INPUT); // Min value = 4096 / MaxValue = 0
   pinMode(SmokePin, INPUT);
 
+  pinMode(motorA, OUTPUT);
+  pinMode(motorB, OUTPUT);
+
+  digitalWrite(motorA,LOW);
+  digitalWrite(motorB,LOW);
+  
   setupWiFi();
   setupSinricPro();
 }
@@ -143,18 +164,15 @@ void loop()
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
 
-    if (rainValue < 2000) //  is raining
+   if (rainValue < 3000) //  is raining
     {
-      Serial.println(rainValue);
-
-      command = 'F';
+     command = 'F';
     }
 
-    if (smokeValue < 3000) // is smokey
+    if (smokeValue > 700) // is smokey
     {
       command = 'A';
     }
-
     windowHandle();
   }
 }
@@ -175,8 +193,13 @@ void windowHandle()
 void openWindow()
 {
   Serial.printf("Abrindo janela");
-  digitalWrite(Led1Pin, HIGH);
-  digitalWrite(Led2Pin, LOW);
+    digitalWrite(Led1Pin, HIGH);
+    digitalWrite(Led2Pin, LOW);
+    digitalWrite(motorA,HIGH);
+    digitalWrite(motorB,LOW);
+    delay(5000);
+    digitalWrite(motorA,LOW);
+    digitalWrite(motorB,LOW);
   state = "Aberto";
 
   updateMode("windowState", "Aberto");
@@ -185,8 +208,13 @@ void openWindow()
 void closeWindow()
 {
   Serial.printf("Fechando janela");
-  digitalWrite(Led2Pin, HIGH);
-  digitalWrite(Led1Pin, LOW);
+    digitalWrite(Led2Pin, HIGH);
+    digitalWrite(Led1Pin, LOW);
+    digitalWrite(motorA,LOW);
+    digitalWrite(motorB,HIGH);
+    delay(5000);
+    digitalWrite(motorA,LOW);
+    digitalWrite(motorB,LOW);
   state = "Fechado";
 
   updateMode("windowState", "Fechado");
