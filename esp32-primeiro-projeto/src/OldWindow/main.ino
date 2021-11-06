@@ -1,20 +1,5 @@
-/*
- * Example
- *
- * If you encounter any issues:
- * - check the readme.md at https://github.com/sinricpro/esp8266-esp32-sdk/blob/master/README.md
- * - ensure all dependent libraries are installed
- * - see https://github.com/sinricpro/esp8266-esp32-sdk/blob/master/README.md#arduinoide
- * - see https://github.com/sinricpro/esp8266-esp32-sdk/blob/master/README.md#dependencies
- * - open serial monitor and check whats happening
- * - check full user documentation at https://sinricpro.github.io/esp8266-esp32-sdk
- * - visit https://github.com/sinricpro/esp8266-esp32-sdk/issues and check for existing issues or open a new one
- */
-
-// Custom devices requires SinricPro ESP8266/ESP32 SDK 2.9.6 or later
-
 // Uncomment the following line to enable serial debug output
-//#define ENABLE_DEBUG
+#define ENABLE_DEBUG
 
 #ifdef ENABLE_DEBUG
 #define DEBUG_ESP_PORT Serial
@@ -22,25 +7,18 @@
 #define NDEBUG
 #endif
 
-#include <Arduino.h>
-#ifdef ESP8266
-#include <ESP8266WiFi.h>
-#endif
-#ifdef ESP32
+// ESP32 Wifi
 #include <WiFi.h>
-#endif
-
+#include <Arduino.h>
 #include <SinricPro.h>
-#include "JanelaPRO.h"
+#include "SmartWindow.h"
 
 #define APP_KEY "ab811fde-cf36-48f2-ad19-d40d260c2684"
 #define APP_SECRET "02f82d71-fe22-4839-92e4-65adec11fc29-5873019c-f4c9-47ad-8c49-a56ef52f4f22"
-#define DEVICE_ID "6185f2ff0e8d611820f4a43f"
+#define DEVICE_ID "613df2b62c014831f824a6dc"
 
-#define SSID "YOUR_WIFI_SSID"
-#define PASS "YOUR_WIFI_PASS"
-
-#define BAUD_RATE 9600
+#define SSID "Valmira"
+#define PASS "@val515856"
 
 #define Led1Pin 19 //  "Aberto"
 #define Led2Pin 18 //  "Fechado"
@@ -53,11 +31,10 @@
 
 char command = 'P';
 bool isConnectedToSinric = false;
-int rainDetectionValue = 3000;
-int smokeDetectionValue = 700;
 String state;
+#define BAUD_RATE 9600
 
-JanelaPRO &janelaPRO = SinricPro[DEVICE_ID];
+SmartWindow &smartWindow = SinricPro[DEVICE_ID];
 
 /*************
  * Variables *
@@ -67,9 +44,6 @@ JanelaPRO &janelaPRO = SinricPro[DEVICE_ID];
 
 // ModeController
 std::map<String, String> globalModes;
-
-// RangeController
-std::map<String, int> globalRangeValues;
 
 /*************
  * Callbacks *
@@ -109,26 +83,6 @@ bool onSetMode(const String &deviceId, const String &instance, String &mode)
   return true;
 }
 
-// RangeController
-bool onRangeValue(const String &deviceId, const String &instance, int &rangeValue)
-{
-  Serial.printf("[Device: %s]: Value for \"%s\" changed to %d\r\n", deviceId.c_str(), instance.c_str(), rangeValue);
-  globalRangeValues[instance] = rangeValue;
-
-  const inst = instance.c_str();
-  inst == "gasRange" ? smokeDetectionValue = rangeValue : rainDetectionValue = rangeValue;
-
-  return true;
-}
-
-bool onAdjustRangeValue(const String &deviceId, const String &instance, int &valueDelta)
-{
-  globalRangeValues[instance] += valueDelta;
-  Serial.printf("[Device: %s]: Value for \"%s\" changed about %d to %d\r\n", deviceId.c_str(), instance.c_str(), valueDelta, globalRangeValues[instance]);
-  globalRangeValues[instance] = valueDelta;
-  return true;
-}
-
 /**********
  * Events *
  *************************************************
@@ -140,13 +94,7 @@ bool onAdjustRangeValue(const String &deviceId, const String &instance, int &val
 // ModeController
 void updateMode(String instance, String mode)
 {
-  janelaPRO.sendModeEvent(instance, mode, "PHYSICAL_INTERACTION");
-}
-
-// RangeController
-void updateRangeValue(String instance, int value)
-{
-  janelaPRO.sendRangeValueEvent(instance, value);
+  smartWindow.sendModeEvent(instance, mode, "PHYSICAL_INTERACTION");
 }
 
 /********* 
@@ -155,20 +103,14 @@ void updateRangeValue(String instance, int value)
 
 void setupSinricPro()
 {
-
   // ModeController
-  janelaPRO.onSetMode("windowState", onSetMode);
-
-  // RangeController
-  janelaPRO.onRangeValue("rainRange", onRangeValue);
-  janelaPRO.onAdjustRangeValue("rainRange", onAdjustRangeValue);
-  janelaPRO.onRangeValue("gasRange", onRangeValue);
-  janelaPRO.onAdjustRangeValue("gasRange", onAdjustRangeValue);
+  smartWindow.onSetMode("windowState", onSetMode);
 
   SinricPro.onConnected([]
                         {
                           Serial.printf("[SinricPro]: Connected\r\n");
                           isConnectedToSinric = true;
+                          //openWindow();
                         });
   SinricPro.onDisconnected([]
                            {
@@ -193,11 +135,10 @@ void setupWiFi()
 void setup()
 {
   Serial.begin(BAUD_RATE);
-
   pinMode(Led1Pin, OUTPUT);
   pinMode(Led2Pin, OUTPUT);
 
-  pinMode(RainPin, INPUT); // Min value = 4096 / MaxValue = 0
+  pinMode(RainPin, INPUT); // Min value = 4095 / MaxValue = 0
   pinMode(SmokePin, INPUT);
 
   pinMode(motorA, OUTPUT);
@@ -223,12 +164,12 @@ void loop()
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
 
-    if (rainValue < rainDetectionValue) //  is raining
+    if (rainValue < 3000) //  is raining
     {
       command = 'F';
     }
 
-    if (smokeValue > smokeDetectionValue) // is smokey
+    if (smokeValue > 700) // is smokey
     {
       command = 'A';
     }
@@ -265,3 +206,16 @@ void openWindow()
 }
 
 void closeWindow()
+{
+  Serial.printf("Fechando janela");
+  digitalWrite(Led2Pin, HIGH);
+  digitalWrite(Led1Pin, LOW);
+  digitalWrite(motorA, LOW);
+  digitalWrite(motorB, HIGH);
+  delay(5000);
+  digitalWrite(motorA, LOW);
+  digitalWrite(motorB, LOW);
+  state = "Fechado";
+
+  updateMode("windowState", "Fechado");
+}
