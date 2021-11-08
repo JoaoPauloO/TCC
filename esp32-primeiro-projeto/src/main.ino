@@ -26,8 +26,11 @@
 #define SmokePin 32 //  "Gás"
 #define RainPin 33  //  "Chuva"
 
-#define motorA 27 // Pinos que irão controlar o estado do motor
+#define motorA 27 // Pinos que irão controlar o motor
 #define motorB 26
+
+#define hallPin1  
+#define hallPin2
 
 char command = 'P';
 bool isConnectedToSinric = false;
@@ -57,39 +60,15 @@ bool onSetMode(const String &deviceId, const String &instance, String &mode)
 
   if (mode.charAt(0) == 'A')
   {
-    digitalWrite(Led1Pin, HIGH);
-    digitalWrite(Led2Pin, LOW);
-    digitalWrite(motorA,HIGH);
-    digitalWrite(motorB,LOW);
-    delay(5000);
-    digitalWrite(motorA,LOW);
-    digitalWrite(motorB,LOW);
-    
-    state = "Aberto";
+    openWindow();
   }
   else if (mode.charAt(0) == 'F')
   {
-    digitalWrite(Led2Pin, HIGH);
-    digitalWrite(Led1Pin, LOW);
-    digitalWrite(motorA,LOW);
-    digitalWrite(motorB,HIGH);
-    delay(5000);
-    digitalWrite(motorA,LOW);
-    digitalWrite(motorB,LOW);
-    
-    state = "Fechado";
+    closeWindow();
   }
 
   return true;
 }
-
-/**********
- * Events *
- *************************************************
- * Examples how to update the server status when *
- * you physically interact with your device or a *
- * sensor reading changes.                       *
- *************************************************/
 
 // ModeController
 void updateMode(String instance, String mode)
@@ -144,6 +123,10 @@ void setup()
   pinMode(motorA, OUTPUT);
   pinMode(motorB, OUTPUT);
 
+  
+  pinMode(hallPin1, INPUT);
+  pinMode(hallPin2, INPUT);
+
   digitalWrite(motorA,LOW);
   digitalWrite(motorB,LOW);
   
@@ -163,15 +146,15 @@ void loop()
     command = 'P';
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
-
+    
    if (rainValue < 3000) //  is raining
     {
      command = 'F';
     }
 
-    if (smokeValue > 700) // is smokey
+    if (smokeValue > 2200) // is smokey
     {
-      command = 'A';
+     command = 'A';
     }
     windowHandle();
   }
@@ -185,9 +168,16 @@ bool isWindowOpen()
 void windowHandle()
 {
   if (command == 'A' && !isWindowOpen())
+  {
     openWindow();
+    updateMode("windowState", "Aberto");
+
+  }
   if (command == 'F' && isWindowOpen())
-    closeWindow();
+  { 
+     closeWindow();
+     updateMode("windowState", "Fechado");
+  }
 }
 
 void openWindow()
@@ -200,9 +190,8 @@ void openWindow()
     delay(5000);
     digitalWrite(motorA,LOW);
     digitalWrite(motorB,LOW);
-  state = "Aberto";
+    state = "Aberto";
 
-  updateMode("windowState", "Aberto");
 }
 
 void closeWindow()
@@ -215,7 +204,5 @@ void closeWindow()
     delay(5000);
     digitalWrite(motorA,LOW);
     digitalWrite(motorB,LOW);
-  state = "Fechado";
-
-  updateMode("windowState", "Fechado");
+    state = "Fechado";
 }
