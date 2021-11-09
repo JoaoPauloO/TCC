@@ -118,7 +118,10 @@ bool onRangeValue(const String &deviceId, const String &instance, int &rangeValu
 
   String inst = instance.c_str();
   Serial.println(inst);
-  inst == "gasRange" ? smokeDetectionValue = *rangeValue : rainDetectionValue = *rangeValue;
+  if(inst == "gasRange")
+     smokeDetectionValue = rangeValue;
+  else
+     rainDetectionValue = rangeValue;
 
   return true;
 }
@@ -227,9 +230,10 @@ void loop()
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
 
-    if (i > 1000)
+    if (i > 3000)
     {
-      Serial.println(rainValue + "  " + rainDetectionValue);
+      Serial.println(smokeDetectionValue);
+      Serial.println(smokeValue);
       i = 0;
     }
     if (rainValue < rainDetectionValue) //  is raining
