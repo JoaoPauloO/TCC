@@ -118,7 +118,8 @@ bool onRangeValue(const String &deviceId, const String &instance, int &rangeValu
 
   String inst = instance.c_str();
   Serial.println(inst);
-  inst == "gasRange" ? smokeDetectionValue = rangeValue : rainDetectionValue = rangeValue;
+  inst == "gasRange" ? smokeDetectionValue = *rangeValue : rainDetectionValue = *rangeValue;
+
   return true;
 }
 
@@ -217,18 +218,19 @@ void setup()
 
 void loop()
 {
- 
+
   SinricPro.handle();
   if (isConnectedToSinric)
   {
-     i++; 
+    i++;
     command = 'P';
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
 
-    if(i> 1000) {
-      Serial.println(rainValue + "  "+ rainDetectionValue);
-      i= 0;
+    if (i > 1000)
+    {
+      Serial.println(rainValue + "  " + rainDetectionValue);
+      i = 0;
     }
     if (rainValue < rainDetectionValue) //  is raining
     {
@@ -239,7 +241,6 @@ void loop()
     {
       command = 'A';
     }
-
 
     windowHandle();
   }
