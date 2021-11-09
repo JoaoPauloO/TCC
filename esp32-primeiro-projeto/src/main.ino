@@ -37,8 +37,8 @@
 #define APP_SECRET "02f82d71-fe22-4839-92e4-65adec11fc29-5873019c-f4c9-47ad-8c49-a56ef52f4f22"
 #define DEVICE_ID "6185f2ff0e8d611820f4a43f"
 
-#define SSID "YOUR_WIFI_SSID"
-#define PASS "YOUR_WIFI_PASS"
+#define SSID "Valmira"
+#define PASS "@val515856"
 
 #define BAUD_RATE 9600
 
@@ -55,6 +55,7 @@ char command = 'P';
 bool isConnectedToSinric = false;
 int rainDetectionValue = 3000;
 int smokeDetectionValue = 700;
+int i = 0;
 String state;
 
 JanelaPRO &janelaPRO = SinricPro[DEVICE_ID];
@@ -115,9 +116,9 @@ bool onRangeValue(const String &deviceId, const String &instance, int &rangeValu
   Serial.printf("[Device: %s]: Value for \"%s\" changed to %d\r\n", deviceId.c_str(), instance.c_str(), rangeValue);
   globalRangeValues[instance] = rangeValue;
 
-  const inst = instance.c_str();
+  String inst = instance.c_str();
+  Serial.println(inst);
   inst == "gasRange" ? smokeDetectionValue = rangeValue : rainDetectionValue = rangeValue;
-
   return true;
 }
 
@@ -216,13 +217,19 @@ void setup()
 
 void loop()
 {
+ 
   SinricPro.handle();
   if (isConnectedToSinric)
   {
+     i++; 
     command = 'P';
     int rainValue = analogRead(RainPin);
     int smokeValue = analogRead(SmokePin);
 
+    if(i> 1000) {
+      Serial.println(rainValue + "  "+ rainDetectionValue);
+      i= 0;
+    }
     if (rainValue < rainDetectionValue) //  is raining
     {
       command = 'F';
@@ -232,6 +239,8 @@ void loop()
     {
       command = 'A';
     }
+
+
     windowHandle();
   }
 }
@@ -265,3 +274,16 @@ void openWindow()
 }
 
 void closeWindow()
+{
+  Serial.printf("Fechando janela");
+  digitalWrite(Led2Pin, HIGH);
+  digitalWrite(Led1Pin, LOW);
+  digitalWrite(motorA, LOW);
+  digitalWrite(motorB, HIGH);
+  delay(5000);
+  digitalWrite(motorA, LOW);
+  digitalWrite(motorB, LOW);
+  state = "Fechado";
+
+  updateMode("windowState", "Fechado");
+}
