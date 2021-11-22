@@ -29,8 +29,8 @@
 #define motorA 27 // Pinos que irão controlar o motor
 #define motorB 26
 
-#define hallPin1  
-#define hallPin2
+#define hallPin1  2
+#define hallPin2  4
 
 char command = 'P';
 bool isConnectedToSinric = false;
@@ -187,11 +187,14 @@ void openWindow()
     digitalWrite(Led2Pin, LOW);
     digitalWrite(motorA,HIGH);
     digitalWrite(motorB,LOW);
-    delay(5000);
+    
+    Serial.println(digitalRead(hallPin2));
+    while (analogRead(hallPin2) > 2500)
+    {
+    }
     digitalWrite(motorA,LOW);
     digitalWrite(motorB,LOW);
     state = "Aberto";
-
 }
 
 void closeWindow()
@@ -201,7 +204,14 @@ void closeWindow()
     digitalWrite(Led1Pin, LOW);
     digitalWrite(motorA,LOW);
     digitalWrite(motorB,HIGH);
-    delay(5000);
+    Serial.println(digitalRead(hallPin1));
+
+    while (analogRead(hallPin1) > 2500) // analogRead(hallPin1) > 2000
+    {
+      //Serial.println(digitalRead(hallPin1))
+    }
+
+    
     digitalWrite(motorA,LOW);
     digitalWrite(motorB,LOW);
     state = "Fechado";
