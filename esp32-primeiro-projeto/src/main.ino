@@ -1,21 +1,3 @@
-/*
- * Example
- *
- * If you encounter any issues:
- * - check the readme.md at https://github.com/sinricpro/esp8266-esp32-sdk/blob/master/README.md
- * - ensure all dependent libraries are installed
- * - see https://github.com/sinricpro/esp8266-esp32-sdk/blob/master/README.md#arduinoide
- * - see https://github.com/sinricpro/esp8266-esp32-sdk/blob/master/README.md#dependencies
- * - open serial monitor and check whats happening
- * - check full user documentation at https://sinricpro.github.io/esp8266-esp32-sdk
- * - visit https://github.com/sinricpro/esp8266-esp32-sdk/issues and check for existing issues or open a new one
- */
-
-// Custom devices requires SinricPro ESP8266/ESP32 SDK 2.9.6 or later
-
-// Uncomment the following line to enable serial debug output
-//#define ENABLE_DEBUG
-
 #ifdef ENABLE_DEBUG
 #define DEBUG_ESP_PORT Serial
 #define NODEBUG_WEBSOCKETS
@@ -33,17 +15,14 @@
 #include <SinricPro.h>
 #include "JanelaPRO.h"
 
-#define APP_KEY "ab811fde-cf36-48f2-ad19-d40d260c2684"
-#define APP_SECRET "02f82d71-fe22-4839-92e4-65adec11fc29-5873019c-f4c9-47ad-8c49-a56ef52f4f22"
+#define APP_KEY "da5be0f3-aded-450b-b901-5cf168855331"
+#define APP_SECRET "76f00ecd-b2fc-419e-91f9-81bb41369b10-d196d710-b7c8-4053-a306-904050563052"
 #define DEVICE_ID "6185f2ff0e8d611820f4a43f"
 
-#define SSID "Valmira"
-#define PASS "@val515856"
+#define SSID "NOME_WIFI"
+#define PASS "SENHA"
 
 #define BAUD_RATE 9600
-
-#define Led1Pin 19 //  "Aberto"
-#define Led2Pin 18 //  "Fechado"
 
 #define SmokePin 32 //  "Gás"
 #define RainPin 33  //  "Chuva"
@@ -51,23 +30,18 @@
 #define motorA 27 // Pinos que irão controlar o motor
 #define motorB 26
 
-#define hallPin1 2
-#define hallPin2 4
+#define hallPin1 34
+#define hallPin2 35
 
 char command = 'P';
 bool isConnectedToSinric = false;
 int rainDetectionValue = 3000;
 int smokeDetectionValue = 700;
-int i = 0;
+
 String state;
 
 JanelaPRO &janelaPRO = SinricPro[DEVICE_ID];
 
-/*************
- * Variables *
- ***********************************************
- * Global variables to store the device states *
- ***********************************************/
 
 // ModeController
 std::map<String, String> globalModes;
@@ -75,9 +49,6 @@ std::map<String, String> globalModes;
 // RangeController
 std::map<String, int> globalRangeValues;
 
-/*************
- * Callbacks *
- *************/
 
 // ModeController
 bool onSetMode(const String &deviceId, const String &instance, String &mode)
@@ -87,7 +58,6 @@ bool onSetMode(const String &deviceId, const String &instance, String &mode)
 
   if (mode.charAt(0) == 'A')
   {
-
     openWindow();
   }
   else if (mode.charAt(0) == 'F')
@@ -105,7 +75,7 @@ bool onRangeValue(const String &deviceId, const String &instance, int &rangeValu
   globalRangeValues[instance] = rangeValue;
 
   String inst = instance.c_str();
-  Serial.println(inst);
+ 
   if (inst == "gasRange")
     smokeDetectionValue = rangeValue;
   else
@@ -122,13 +92,6 @@ bool onAdjustRangeValue(const String &deviceId, const String &instance, int &val
   return true;
 }
 
-/**********
- * Events *
- *************************************************
- * Examples how to update the server status when *
- * you physically interact with your device or a *
- * sensor reading changes.                       *
- *************************************************/
 
 // ModeController
 void updateMode(String instance, String mode)
@@ -187,10 +150,7 @@ void setup()
 {
   Serial.begin(BAUD_RATE);
 
-  pinMode(Led1Pin, OUTPUT);
-  pinMode(Led2Pin, OUTPUT);
-
-  pinMode(RainPin, INPUT); // Min value = 4096 / MaxValue = 0
+  pinMode(RainPin, INPUT); 
   pinMode(SmokePin, INPUT);
 
   pinMode(motorA, OUTPUT);
@@ -214,31 +174,24 @@ void loop()
 {
 
   SinricPro.handle();
-  if (isConnectedToSinric)
-  {
-    i++;
-    command = 'P';
-    int rainValue = analogRead(RainPin);
-    int smokeValue = analogRead(SmokePin);
+   if (isConnectedToSinric)
+   {
+     command = 'P';
+     int rainValue = analogRead(RainPin);
+     int smokeValue = analogRead(SmokePin);
 
-    if (i > 3000)
-    {
-      Serial.println(smokeDetectionValue);
-      Serial.println(smokeValue);
-      i = 0;
-    }
-    if (rainValue < rainDetectionValue) //  is raining
-    {
-      command = 'F';
-    }
+     if (rainValue < rainDetectionValue) //  is raining
+     {
+       command = 'F';
+     }
 
-    if (smokeValue > smokeDetectionValue) // is smokey
-    {
-      command = 'A';
-    }
+     if (smokeValue > smokeDetectionValue) // is smokey
+     {
+       command = 'A';
+     }
 
-    windowHandle();
-  }
+     windowHandle();
+   }
 }
 
 bool isWindowOpen()
@@ -264,8 +217,6 @@ void openWindow()
 {
   Serial.printf("Abrindo janela");
 
-  digitalWrite(Led1Pin, HIGH);
-  digitalWrite(Led2Pin, LOW);
   digitalWrite(motorA, HIGH);
   digitalWrite(motorB, LOW);
 
@@ -282,12 +233,11 @@ void openWindow()
 void closeWindow()
 {
   Serial.printf("Fechando janela");
-  digitalWrite(Led2Pin, HIGH);
-  digitalWrite(Led1Pin, LOW);
+
   digitalWrite(motorA, LOW);
   digitalWrite(motorB, HIGH);
-  Serial.println(digitalRead(hallPin1));
 
+  Serial.println(digitalRead(hallPin1));
   while (analogRead(hallPin1) > 2500)
   {
   }
